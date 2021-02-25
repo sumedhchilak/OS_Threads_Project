@@ -29,6 +29,17 @@ static bool too_many_loops (unsigned loops);
 static void busy_wait (int64_t loops);
 static void real_time_sleep (int64_t num, int32_t denom);
 static void real_time_delay (int64_t num, int32_t denom);
+static bool wakeup_comparator(struct list_elem *a, struct list_elem *b, void *aux);
+
+// Create list of blocked threads
+static struct list blocked_threads;
+
+// // function to compare wakeup times
+bool wakeup_comparator(struct list_elem *a, struct list_elem *b, void *aux){
+   struct thread *a_thread = list_entry(a, struct thread, tick_elem);
+   struct thread *b_thread = list_entry(b, struct thread, tick_elem);
+   return a_thread->wakeup_tick < b_thread->wakeup_tick;
+}
 
 /* Sets up the timer to interrupt TIMER_FREQ times per second,
    and registers the corresponding interrupt. */
@@ -37,6 +48,7 @@ timer_init (void)
 {
   pit_configure_channel (0, 2, TIMER_FREQ);
   intr_register_ext (0x20, timer_interrupt, "8254 Timer");
+  list_init(&blocked_threads);
 }
 
 /* Calibrates loops_per_tick, used to implement brief delays. */
@@ -90,8 +102,20 @@ timer_elapsed (int64_t then)
 void
 timer_sleep (int64_t ticks) 
 {
+  if(ticks <= 0) {
+    return;
+  }
+  struct thread *cur_thread = thread_current();
   int64_t start = timer_ticks ();
-
+  cur_thread->wakeup_tick = start + ticks;
+  intr_disable();
+  list_insert_ordered(&blocked_threads, &(cur_thread->tick_elem), wakeup_comparator, NULL);
+  intr_enable();
+  
+/*
+void list_insert_ordered (struct list *, struct list_elem *,
+                          list_less_func *, void *aux);
+*/
   ASSERT (intr_get_level () == INTR_ON);
   while (timer_elapsed (start) < ticks) 
     thread_yield ();
