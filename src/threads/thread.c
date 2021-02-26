@@ -201,7 +201,7 @@ thread_create (const char *name, int priority,
 
   /* Add to run queue. */
   thread_unblock (t);
-
+  thread_yield();
   return tid;
 }
 
@@ -352,6 +352,7 @@ void
 thread_set_nice (int nice UNUSED) 
 {
   /* Not yet implemented. */
+  
 }
 
 /* Returns the current thread's nice value. */

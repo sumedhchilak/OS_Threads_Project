@@ -105,12 +105,14 @@ timer_sleep (int64_t ticks)
   if(ticks <= 0) {
     return;
   }
+  //static struct semaphore sema_timer;
   struct thread *cur_thread = thread_current();
   int64_t start = timer_ticks ();
   cur_thread->wakeup_tick = start + ticks;
   intr_disable();
   list_insert_ordered(&blocked_threads, &(cur_thread->tick_elem), wakeup_comparator, NULL);
   intr_enable();
+  sema_down(&cur_thread->sema);
   
 /*
 void list_insert_ordered (struct list *, struct list_elem *,
@@ -196,6 +198,17 @@ static void
 timer_interrupt (struct intr_frame *args UNUSED)
 {
   ticks++;
+  while(!list_empty(&blocked_threads)){
+    struct list_elem *front_elem = list_front(&blocked_threads);
+    struct thread *front_thread = list_entry(front_elem, struct thread, tick_elem);
+    if(ticks >= front_thread->wakeup_tick){
+      sema_up(&front_thread->sema);
+      list_pop_front(&blocked_threads);
+    }
+    else {
+      break;
+    }
+  }
   thread_tick ();
 }
 
