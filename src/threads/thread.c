@@ -204,10 +204,9 @@ thread_create (const char *name, int priority,
   thread_unblock (t);
   
   /* check to see if newly created thread has a higher priority */
-  if(intr_context()){
-    intr_yield_on_return();
-  }
-  if (!intr_context()){
+  
+  struct thread *curr_thread = thread_current();
+  if(curr_thread->priority < t->priority){
     thread_yield();
   }
   return tid;
@@ -247,9 +246,13 @@ thread_unblock (struct thread *t)
 
   old_level = intr_disable ();
   ASSERT (t->status == THREAD_BLOCKED);
-  list_push_back (&ready_list, &t->elem);
-  list_sort(&ready_list, priority_comparator, NULL);
+  // list_push_back (&ready_list, &t->elem);
+  // list_sort(&ready_list, priority_comparator, NULL);
+  list_insert_ordered (&ready_list, &t->elem, priority_comparator, NULL);
   t->status = THREAD_READY;
+  // if(t->priority > thread_current()->priority){
+  //   thread_yield();
+  // }
   intr_set_level (old_level);
 }
 
@@ -319,8 +322,9 @@ thread_yield (void)
 
   old_level = intr_disable ();
   if (cur != idle_thread){
-    list_push_back (&ready_list, &cur->elem);
-    list_sort(&ready_list, priority_comparator, NULL);
+    // list_push_back (&ready_list, &cur->elem);
+    // list_sort(&ready_list, priority_comparator, NULL);
+    list_insert_ordered (&ready_list, &cur->elem, priority_comparator, NULL);
   }
   cur->status = THREAD_READY;
   schedule ();
@@ -350,11 +354,17 @@ thread_set_priority (int new_priority)
 {
   thread_current ()->priority = new_priority;
   thread_current ()->prev_priority = new_priority;
-  if(intr_context()){
-    intr_yield_on_return();
-  }
-  if (!intr_context()){
-    thread_yield();
+  // current thread priority decreased
+  if(!list_empty(&ready_list)){
+    struct thread *front = list_entry(list_front(&ready_list), struct thread, elem);
+    if(front == NULL){
+      
+    }
+    else{
+      if(front->priority > new_priority){
+        thread_yield();
+      }
+    }
   }
 }
 
@@ -483,6 +493,8 @@ init_thread (struct thread *t, const char *name, int priority)
   strlcpy (t->name, name, sizeof t->name);
   t->stack = (uint8_t *) t + PGSIZE;
   t->priority = priority;
+  t->prev_priority = priority;
+  list_init(&t->lock_list);
   t->magic = THREAD_MAGIC;
 
   old_level = intr_disable();

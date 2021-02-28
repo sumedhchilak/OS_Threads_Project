@@ -6,6 +6,9 @@
 #include <stdint.h>
 #include "threads/synch.h"
 
+bool priority_comparator(struct list_elem *, struct list_elem*, void *aux);
+bool lock_comparator(struct list_elem *, struct list_elem*, void *aux);
+
 /* States in a thread's life cycle. */
 enum thread_status
   {
@@ -95,10 +98,12 @@ struct thread
    /* added in */
     int64_t wakeup_tick;                 /* tick to wakeup at */
     struct list_elem tick_elem;          /* elem in list of elems of blocked threads*/
-    int prev_priority;
+    int prev_priority;                   /* base priority */
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* List element. */
     struct semaphore sema;              /* sempahore for thread*/
+    struct list lock_list;              /* all the locks the thread is holding */
+    struct lock *lock_wait;             /* lock is waiting and trying to get this lock */
 
 #ifdef USERPROG
     /* Owned by userprog/process.c. */

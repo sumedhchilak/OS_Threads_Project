@@ -34,13 +34,6 @@ static bool wakeup_comparator(struct list_elem *a, struct list_elem *b, void *au
 // Create list of blocked threads
 static struct list blocked_threads;
 
-// // function to compare wakeup times
-bool wakeup_comparator(struct list_elem *a, struct list_elem *b, void *aux){
-   struct thread *a_thread = list_entry(a, struct thread, tick_elem);
-   struct thread *b_thread = list_entry(b, struct thread, tick_elem);
-   return a_thread->wakeup_tick < b_thread->wakeup_tick;
-}
-
 /* Sets up the timer to interrupt TIMER_FREQ times per second,
    and registers the corresponding interrupt. */
 void
@@ -282,4 +275,11 @@ real_time_delay (int64_t num, int32_t denom)
      the possibility of overflow. */
   ASSERT (denom % 1000 == 0);
   busy_wait (loops_per_tick * num / 1000 * TIMER_FREQ / (denom / 1000)); 
+}
+
+// // function to compare wakeup times
+bool wakeup_comparator(struct list_elem *a, struct list_elem *b, void *aux){
+   struct thread *a_thread = list_entry(a, struct thread, tick_elem);
+   struct thread *b_thread = list_entry(b, struct thread, tick_elem);
+   return a_thread->wakeup_tick < b_thread->wakeup_tick;
 }
