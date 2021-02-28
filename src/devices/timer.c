@@ -107,6 +107,7 @@ timer_sleep (int64_t ticks)
   }
   //static struct semaphore sema_timer;
   struct thread *cur_thread = thread_current();
+  sema_init(&(cur_thread->sema), 0);
   int64_t start = timer_ticks ();
   cur_thread->wakeup_tick = start + ticks;
   intr_disable();

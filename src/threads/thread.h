@@ -95,6 +95,7 @@ struct thread
    /* added in */
     int64_t wakeup_tick;                 /* tick to wakeup at */
     struct list_elem tick_elem;          /* elem in list of elems of blocked threads*/
+    int prev_priority;
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* List element. */
     struct semaphore sema;              /* sempahore for thread*/
