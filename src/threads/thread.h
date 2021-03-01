@@ -8,6 +8,7 @@
 
 bool priority_comparator(struct list_elem *, struct list_elem*, void *aux);
 bool lock_comparator(struct list_elem *, struct list_elem*, void *aux);
+bool sema_comparator(struct list_elem *, struct list_elem*, void *aux);
 
 /* States in a thread's life cycle. */
 enum thread_status
@@ -102,8 +103,8 @@ struct thread
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* List element. */
     struct semaphore sema;              /* sempahore for thread*/
-    struct list lock_list;              /* all the locks the thread is holding */
-    struct lock *lock_wait;             /* lock is waiting and trying to get this lock */
+    struct list held_locks;              /* all the locks the thread is holding */
+    struct lock *lock_wait;             /* thread is waiting and trying to get this lock */
 
 #ifdef USERPROG
     /* Owned by userprog/process.c. */
@@ -144,7 +145,7 @@ void thread_foreach (thread_action_func *, void *);
 
 int thread_get_priority (void);
 void thread_set_priority (int);
-
+void donate(struct thread *, int);
 int thread_get_nice (void);
 void thread_set_nice (int);
 int thread_get_recent_cpu (void);

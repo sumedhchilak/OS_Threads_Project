@@ -352,10 +352,12 @@ thread_foreach (thread_action_func *func, void *aux)
 void
 thread_set_priority (int new_priority) 
 {
+  // enum intr_level level = intr_disable();
   thread_current ()->priority = new_priority;
   thread_current ()->prev_priority = new_priority;
   // current thread priority decreased
   if(!list_empty(&ready_list)){
+    list_sort(&ready_list, priority_comparator, NULL);
     struct thread *front = list_entry(list_front(&ready_list), struct thread, elem);
     if(front == NULL){
       
@@ -366,13 +368,28 @@ thread_set_priority (int new_priority)
       }
     }
   }
+  // intr_set_level(level);
+  // thread_yield();
+}
+
+void donate (struct thread *t, int priority){
+  t->priority = priority;
+  if(!list_empty(&ready_list)){
+    struct thread *front = list_entry(list_front(&ready_list), struct thread, elem);
+    if(front != NULL && front->priority > priority){
+      thread_yield();
+    }
+  }
 }
 
 /* Returns the current thread's priority. */
 int
 thread_get_priority (void) 
 {
-  return thread_current ()->priority;
+  // enum intr_level level = intr_disable();
+  int prior = thread_current ()->priority;
+  // intr_set_level(level);
+  return prior;
 }
 
 /* Sets the current thread's nice value to NICE. */
@@ -493,8 +510,8 @@ init_thread (struct thread *t, const char *name, int priority)
   strlcpy (t->name, name, sizeof t->name);
   t->stack = (uint8_t *) t + PGSIZE;
   t->priority = priority;
-  t->prev_priority = priority;
-  list_init(&t->lock_list);
+  // t->prev_priority = priority;
+  // list_init(&t->held_locks);
   t->magic = THREAD_MAGIC;
 
   old_level = intr_disable();
