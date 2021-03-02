@@ -345,16 +345,18 @@ thread_foreach (thread_action_func *func, void *aux)
 void
 thread_set_priority (int new_priority) 
 {
-  thread_current ()->priority = new_priority;
-  thread_current ()->prev_priority = new_priority;
+  if(thread_current()->priority == thread_current()->prev_priority){
+    thread_current ()->priority = new_priority;
+    thread_current ()->prev_priority = new_priority;
+  }
+  else{
+    thread_current()->prev_priority = new_priority;
+  }
   // current thread priority decreased
   if(!list_empty(&ready_list)){
     list_sort(&ready_list, priority_comparator, NULL);
     struct thread *front = list_entry(list_front(&ready_list), struct thread, elem);
-    if(front == NULL){
-      
-    }
-    else{
+    if(front != NULL){
       if(front->priority > new_priority){
         thread_yield();
       }
