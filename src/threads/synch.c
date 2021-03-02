@@ -69,7 +69,6 @@ sema_down (struct semaphore *sema)
   old_level = intr_disable ();
   while (sema->value == 0) 
     {
-      // list_push_back (&sema->waiters, &thread_current ()->elem);
       list_insert_ordered (&sema->waiters, &thread_current ()->elem, priority_comparator, NULL);
       thread_block ();
     }
@@ -347,7 +346,6 @@ cond_wait (struct condition *cond, struct lock *lock)
   ASSERT (lock_held_by_current_thread (lock));
   
   sema_init (&waiter.semaphore, 0);
-  //list_push_back (&cond->waiters, &waiter.elem);
   waiter.semaphore.priority = thread_current()->priority;
   list_insert_ordered(&cond->waiters, &waiter.elem, sema_comparator, NULL);
   lock_release (lock);
@@ -398,6 +396,11 @@ bool lock_comparator(struct list_elem *a, struct list_elem *b, void *aux){
 }
 
 bool sema_comparator(struct list_elem *a, struct list_elem *b, void *aux){
+  // struct semaphore_elem *a_sema = list_entry(a, struct semaphore_elem, elem);
+  // struct semaphore_elem *b_sema = list_entry(b, struct semaphore_elem, elem);
+  // struct thread *a_thread = list_entry(list_front(&(a_sema->semaphore.waiters)), struct thread, elem);
+  // struct thread *b_thread = list_entry(list_front(&(b_sema->semaphore.waiters)), struct thread, elem);
+  // return a_thread->priority > b_thread->priority;
   struct semaphore_elem *a_sema = list_entry(a, struct semaphore_elem, elem);
   struct semaphore_elem *b_sema = list_entry(b, struct semaphore_elem, elem);
   return a_sema->semaphore.priority > b_sema->semaphore.priority;
