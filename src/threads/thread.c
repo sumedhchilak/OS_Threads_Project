@@ -345,14 +345,13 @@ thread_foreach (thread_action_func *func, void *aux)
 void
 thread_set_priority (int new_priority) 
 {
-  if(thread_current()->priority == thread_current()->prev_priority){
-    thread_current ()->priority = new_priority;
-    thread_current ()->prev_priority = new_priority;
+  // Sumedh driving
+  int temp = thread_current()->prev_priority;
+  thread_current()->prev_priority = new_priority;
+  if(thread_current()->priority == temp){
+    thread_current()->priority = new_priority;
   }
-  else{
-    thread_current()->prev_priority = new_priority;
-  }
-  // current thread priority decreased
+  // Abinith driving
   if(!list_empty(&ready_list)){
     list_sort(&ready_list, priority_comparator, NULL);
     struct thread *front = list_entry(list_front(&ready_list), struct thread, elem);
@@ -365,6 +364,7 @@ thread_set_priority (int new_priority)
 }
 
 void donate (struct thread *t, int priority){
+  // Avi driving
   t->priority = priority;
   if(!list_empty(&ready_list)){
     struct thread *front = list_entry(list_front(&ready_list), struct thread, elem);
@@ -378,6 +378,7 @@ void donate (struct thread *t, int priority){
 int
 thread_get_priority (void) 
 {
+  // Sumedh driving
   int prior = thread_current ()->priority;
   return prior;
 }

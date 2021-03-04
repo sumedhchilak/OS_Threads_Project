@@ -7,7 +7,6 @@
 #include "threads/synch.h"
 
 bool priority_comparator(struct list_elem *, struct list_elem*, void *aux);
-bool lock_comparator(struct list_elem *, struct list_elem*, void *aux);
 bool sema_comparator(struct list_elem *, struct list_elem*, void *aux);
 
 /* States in a thread's life cycle. */

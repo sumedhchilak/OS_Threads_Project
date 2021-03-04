@@ -99,11 +99,13 @@ timer_sleep (int64_t ticks)
     return;
   }
   //static struct semaphore sema_timer;
+  // Abinith driving
   struct thread *cur_thread = thread_current();
   int64_t start = timer_ticks ();
   cur_thread->wakeup_tick = start + ticks;
   sema_init(&(cur_thread->sema), 0);
   intr_disable();
+  // Sumedh driving
   list_insert_ordered(&blocked_threads, &(cur_thread->tick_elem), wakeup_comparator, NULL);
   intr_enable();
   sema_down(&cur_thread->sema);
@@ -192,6 +194,7 @@ static void
 timer_interrupt (struct intr_frame *args UNUSED)
 {
   ticks++;
+  // Avi driving
   while(!list_empty(&blocked_threads)){
     list_sort(&blocked_threads, wakeup_comparator, NULL);
     struct list_elem *front_elem = list_front(&blocked_threads);

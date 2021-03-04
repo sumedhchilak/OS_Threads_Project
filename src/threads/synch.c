@@ -211,6 +211,7 @@ lock_acquire (struct lock *lock)
   ASSERT (lock != NULL);
   ASSERT (!intr_context ());
   ASSERT (!lock_held_by_current_thread (lock));
+  // Sumedh driving
   struct thread *curr = thread_current();
   struct lock *currLock = lock;
   struct thread *holdingThread = lock->holder;
@@ -219,19 +220,16 @@ lock_acquire (struct lock *lock)
   if(holdingThread != NULL){
     while(holdingThread != NULL && holdingThread->priority < curr->priority){
       int curr_priority = thread_get_priority();
-      currLock->priority = curr_priority;
+      // Avi driving
       donate(holdingThread, curr_priority);
       currLock = holdingThread->lock_wait;
       holdingThread = currLock->holder;
     }
-  }
-  else{
-    currLock->priority = curr->priority;
-  }
+  } // Abinith driving
   sema_down (&lock->semaphore);
   lock->holder = thread_current ();
   holdingThread = lock->holder;
-  list_insert_ordered(&(lock->holder->held_locks), &lock->lock_elem, lock_comparator, NULL);
+  list_push_back(&(lock->holder->held_locks), &lock->lock_elem);
 }
 
 /* Tries to acquires LOCK and returns true if successful or false
@@ -266,7 +264,7 @@ lock_release (struct lock *lock)
 
   ASSERT (lock != NULL);
   ASSERT (lock_held_by_current_thread (lock));
-  
+  // Abinith driving
   lock->holder = NULL;
   sema_up (&lock->semaphore);
 
@@ -275,9 +273,19 @@ lock_release (struct lock *lock)
     donate(curr, curr->prev_priority);
   }
   else{
-    list_sort(&curr->held_locks, lock_comparator, NULL);
-    struct lock *front = list_entry(list_front(&curr->held_locks), struct lock, lock_elem);
-    donate(curr, front->priority);
+    // Sumedh driving
+    struct list_elem *element;
+    int max_priority = curr->prev_priority;
+    for(element = list_front(&curr->held_locks); element != list_end(&curr->held_locks); element = list_next(element)){
+      struct lock * l = list_entry(element, struct lock, lock_elem);
+      if(!list_empty(&l->semaphore.waiters)){
+        struct thread *t = list_entry((&(l->semaphore.waiters))->head.next, struct thread, elem);
+        if(max_priority < t->priority){
+          max_priority = t->priority;
+        }
+      }
+    }
+    donate(curr, max_priority);
   }
 }
 
@@ -384,14 +392,13 @@ cond_broadcast (struct condition *cond, struct lock *lock)
     cond_signal (cond, lock);
 }
 
-bool lock_comparator(struct list_elem *a, struct list_elem *b, void *aux){
-  struct lock *a_lock = list_entry(a, struct lock, lock_elem);
-  struct lock *b_lock = list_entry(b, struct lock, lock_elem);
-  return a_lock->priority > b_lock->priority;
-}
-
 bool sema_comparator(struct list_elem *a, struct list_elem *b, void *aux){
-  struct semaphore_elem *a_sema = list_entry(a, struct semaphore_elem, elem);
-  struct semaphore_elem *b_sema = list_entry(b, struct semaphore_elem, elem);
-  return a_sema->semaphore.priority > b_sema->semaphore.priority;
+  // Avi driving
+  struct semaphore_elem *a_elem = list_entry(a, struct semaphore_elem, elem);
+  struct semaphore_elem *b_elem = list_entry(b, struct semaphore_elem, elem);
+  struct semaphore a_sema = a_elem->semaphore;
+  int a_priority = a_sema.priority;
+  struct semaphore b_sema = b_elem->semaphore;
+  int b_priority = b_sema.priority;
+  return a_priority > b_priority;
 }
