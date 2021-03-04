@@ -29,7 +29,8 @@ static bool too_many_loops (unsigned loops);
 static void busy_wait (int64_t loops);
 static void real_time_sleep (int64_t num, int32_t denom);
 static void real_time_delay (int64_t num, int32_t denom);
-static bool wakeup_comparator(struct list_elem *a, struct list_elem *b, void *aux);
+static bool wakeup_comparator(struct list_elem *a, 
+  struct list_elem *b, void *aux);
 
 // Create list of blocked threads
 static struct list blocked_threads;
@@ -106,7 +107,8 @@ timer_sleep (int64_t ticks)
   sema_init(&(cur_thread->sema), 0);
   intr_disable();
   // Sumedh driving
-  list_insert_ordered(&blocked_threads, &(cur_thread->tick_elem), wakeup_comparator, NULL);
+  list_insert_ordered(&blocked_threads, &(cur_thread->tick_elem), 
+    wakeup_comparator, NULL);
   intr_enable();
   sema_down(&cur_thread->sema);
   

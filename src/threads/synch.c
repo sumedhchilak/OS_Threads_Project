@@ -69,7 +69,8 @@ sema_down (struct semaphore *sema)
   old_level = intr_disable ();
   while (sema->value == 0) 
     {
-      list_insert_ordered (&sema->waiters, &thread_current ()->elem, priority_comparator, NULL);
+      list_insert_ordered (&sema->waiters, &thread_current ()->elem, 
+        priority_comparator, NULL);
       thread_block ();
     }
   sema->value--;
@@ -119,7 +120,8 @@ sema_up (struct semaphore *sema)
   sema->value++;
   if (!list_empty (&sema->waiters)){
     list_sort(&sema->waiters, priority_comparator, NULL);
-    struct thread *front = list_entry (list_pop_front (&sema->waiters), struct thread, elem);
+    struct thread *front = list_entry (list_pop_front (&sema->waiters), 
+      struct thread, elem);
     thread_unblock (front);
     if(front->priority > thread_current ()->priority){
       y = 1;
@@ -276,10 +278,12 @@ lock_release (struct lock *lock)
     // Sumedh driving
     struct list_elem *element;
     int max_priority = curr->prev_priority;
-    for(element = list_front(&curr->held_locks); element != list_end(&curr->held_locks); element = list_next(element)){
+    for(element = list_front(&curr->held_locks); element != list_end(&curr->held_locks);
+      element = list_next(element)){
       struct lock * l = list_entry(element, struct lock, lock_elem);
       if(!list_empty(&l->semaphore.waiters)){
-        struct thread *t = list_entry((&(l->semaphore.waiters))->head.next, struct thread, elem);
+        struct thread *t = list_entry((&(l->semaphore.waiters))->head.next, 
+          struct thread, elem);
         if(max_priority < t->priority){
           max_priority = t->priority;
         }
