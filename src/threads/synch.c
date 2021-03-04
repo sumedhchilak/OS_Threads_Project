@@ -1,4 +1,4 @@
-/* This file is derived from source code for the Nachos
+ /* This file is derived from source code for the Nachos
    instructional operating system.  The Nachos copyright notice
    is reproduced in full below. */
 
@@ -214,27 +214,24 @@ lock_acquire (struct lock *lock)
   struct thread *curr = thread_current();
   struct lock *currLock = lock;
   struct thread *holdingThread = lock->holder;
-  // curr->lock_wait = lock;
-  // if(holdingThread == NULL){
-  //   currLock->priority = curr->priority;
-  // }
-  // else {
-  //   while(holdingThread != NULL && holdingThread->priority < curr->priority){
-  //     donate(holdingThread, curr->priority);
-  //     currLock->priority = curr->priority;
-  //     if(holdingThread->lock_wait != NULL){
-  //       currLock = holdingThread->lock_wait;
-  //       holdingThread = currLock->holder;
-  //     }
-  //     else{
-  //       break;
-  //     }
-  //   }
-  // }
+  curr->lock_wait = lock;
+
+  if(holdingThread != NULL){
+    while(holdingThread != NULL && holdingThread->priority < curr->priority){
+      int curr_priority = thread_get_priority();
+      currLock->priority = curr_priority;
+      donate(holdingThread, curr_priority);
+      currLock = holdingThread->lock_wait;
+      holdingThread = currLock->holder;
+    }
+  }
+  else{
+    currLock->priority = curr->priority;
+  }
   sema_down (&lock->semaphore);
   lock->holder = thread_current ();
-  // thread_current()->lock_wait = NULL;
-  // list_insert_ordered(&(lock->holder->held_locks), &lock->lock_elem, lock_comparator, NULL);
+  holdingThread = lock->holder;
+  list_insert_ordered(&(lock->holder->held_locks), &lock->lock_elem, lock_comparator, NULL);
 }
 
 /* Tries to acquires LOCK and returns true if successful or false
@@ -265,38 +262,23 @@ lock_try_acquire (struct lock *lock)
 void
 lock_release (struct lock *lock) 
 {
+  struct thread *curr = thread_current();
+
   ASSERT (lock != NULL);
   ASSERT (lock_held_by_current_thread (lock));
   
-  struct thread *curr = thread_current();
-  // int max_priority = curr->priority;
-  // list_remove(&lock->lock_elem);
-  // if(list_empty(&curr->held_locks)){
-  //   donate(curr, curr->prev_priority);
-  // } else{
-  //   struct list locks = curr->held_locks;
-  //   list_sort(&locks, lock_comparator, NULL);
-  //   struct list_elem *lock_elem = list_front(&locks);
-  //   // int max_prior = (list_entry(list_front(&locks), struct lock, lock_elem))->priority;
-  //   struct list* threads = 
-  //   donate(curr, max_prior);
-  // }
-  //list_sort(&curr->held_locks, lock_comparator, NULL);
-  // struct list_elem* front_lock = list_front(&curr->held_locks);
-  // while(front_lock != list_end(&thread_current()->held_locks)){
-  //   struct lock *lock = list_entry(front_lock, struct lock, lock_elem);
-  //   if(!list_empty(&lock->semaphore.waiters)){
-  //     struct list* thread_list = &lock->semaphore.waiters;
-  //     struct thread *temp = list_entry(thread_list->head.next, struct thread, elem);
-  //     if(temp->priority > max_priority){
-  //       max_priority = temp->priority;
-  //     }
-  //   }
-  //   front_lock = list_next(front_lock);
-  // }
-  // donate(curr, max_priority);
   lock->holder = NULL;
   sema_up (&lock->semaphore);
+
+  list_remove(&lock->lock_elem);
+  if(list_empty(&curr->held_locks)){
+    donate(curr, curr->prev_priority);
+  }
+  else{
+    list_sort(&curr->held_locks, lock_comparator, NULL);
+    struct lock *front = list_entry(list_front(&curr->held_locks), struct lock, lock_elem);
+    donate(curr, front->priority);
+  }
 }
 
 /* Returns true if the current thread holds LOCK, false
